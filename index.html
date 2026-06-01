@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Món Quà Nhỏ</title>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+      }
+
+      #page1,
+      #page2 {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+
+      #page2 {
+        opacity: 0;
+        pointer-events: none;
+        transition: 1s;
+      }
+
+      .title {
+        position: absolute;
+        bottom: 240px;
+
+        color: white;
+        font-size: 28px;
+        font-weight: 600;
+
+        text-align: center;
+
+        text-shadow:
+          0 0 10px #ffb3eb,
+          0 0 25px #ff75d8;
+      }
+
+      .note {
+        position: absolute;
+        bottom: 85px;
+
+        color: #ffd5ef;
+        font-size: 15px;
+
+        opacity: 0.9;
+      }
+
+      .heart {
+        bottom: 120px;
+
+        width: 65px;
+        height: 65px;
+
+        cursor: pointer;
+
+        animation: pulse 1.5s infinite;
+
+        filter: drop-shadow(0 0 15px #ff2b2b);
+      }
+
+      .heart svg {
+        width: 100%;
+        height: 100%;
+        fill: #ff2b2b;
+      }
+
+      .progress {
+        position: absolute;
+
+        bottom: 65px;
+
+        width: 0;
+        height: 5px;
+
+        background: #ff9de5;
+
+        border-radius: 999px;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+
+        50% {
+          transform: scale(1.15);
+        }
+      }
+
+      #nextHint {
+        position: absolute;
+        bottom: 40px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-size: 16px;
+        opacity: 0;
+        transition: 0.5s;
+        pointer-events: none;
+      }
+
+      #page3 {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: 1s;
+      }
+
+      #photoSphere {
+        position: absolute;
+        inset: 0;
+      }
+
+      .photoItem {
+        position: absolute;
+
+        width: 150px;
+        height: 100px;
+
+        object-fit: cover;
+
+        border-radius: 12px;
+
+        transform-style: preserve-3d;
+
+        transition:
+          left 1s,
+          top 1s,
+          transform 0.2s;
+      }
+
+      #photoPopup {
+        position: fixed;
+
+        inset: 0;
+
+        display: flex;
+
+        justify-content: center;
+        align-items: center;
+
+        background: rgba(0, 0, 0, 0.8);
+
+        opacity: 0;
+
+        pointer-events: none;
+
+        transition: 0.5s;
+
+        z-index: 999;
+      }
+
+      .photoCard {
+        border: 1px solid rgba(255, 255, 255, 0.8);
+
+        border-radius: 18px;
+
+        padding: 10px;
+
+        background: rgba(255, 255, 255, 0.05);
+
+        backdrop-filter: blur(8px);
+
+        max-width: 90%;
+      }
+
+      #popupImg {
+        max-width: 500px;
+        width: 100%;
+
+        border-radius: 12px;
+
+        display: block;
+      }
+
+      #popupWish {
+        margin-top: 10px;
+
+        color: white;
+
+        text-align: center;
+
+        font-size: 18px;
+
+        line-height: 1.4;
+      }
+
+      #galleryHint {
+        position: absolute;
+
+        bottom: 35px;
+        left: 50%;
+
+        transform: translateX(-50%);
+
+        text-align: center;
+
+        color: #ffd6f2;
+
+        font-size: 16px;
+
+        line-height: 1.5;
+
+        text-shadow: 0 0 8px rgba(255, 150, 220, 0.8);
+
+        opacity: 0.9;
+
+        pointer-events: none;
+
+        max-width: 90%;
+      }
+    </style>
+  </head>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="audio/music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <body>
+    <canvas id="bg"></canvas>
+    <canvas id="particles"></canvas>
+
+    <div id="page1">
+      <div class="title">Một món quà nhỏ dành cho bạn!</div>
+
+      <div class="heart" id="heart">
+        <svg viewBox="0 0 512 512">
+          <path
+            d="M256 472
+            C228 444 32 296
+            32 160
+            C32 84 92 32
+            164 32
+            C212 32 244 60
+            256 84
+            C268 60 300 32
+            348 32
+            C420 32 480 84
+            480 160
+            C480 296 284 444
+            256 472Z"
+          />
+        </svg>
+      </div>
+
+      <div class="note">Nhấn giữ trái tim nhé ♥</div>
+
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <div id="page2">
+      <div id="nextHint">Chạm màn hình để xem tiếp ✨</div>
+    </div>
+
+    <div id="page3">
+      <div id="photoSphere"></div>
+
+      <div id="galleryHint">
+        🎁 Click chọn bất kì hộp quà nào nhé<br />
+        Rất nhiều lời chúc ngẫu nhiên đang chờ bạn &lt;3
+      </div>
+    </div>
+
+    <div id="photoPopup">
+      <div class="photoCard">
+        <img id="popupImg" />
+
+        <div id="popupWish"></div>
+      </div>
+    </div>
+
+    <script>
+      // =====================================
+      // CANVAS GALAXY
+      // =====================================
+
+      const bg = document.getElementById("bg");
+      const ctx = bg.getContext("2d");
+
+      let w = (bg.width = innerWidth);
+      let h = (bg.height = innerHeight);
+
+      let sphereItems = [];
+      let sphereRotation = 0;
+
+      window.addEventListener("resize", () => {
+        w = bg.width = innerWidth;
+        h = bg.height = innerHeight;
+      });
+
+      // ==========================
+      // STARS
+      // ==========================
+
+      const stars = [];
+
+      for (let i = 0; i < 500; i++) {
+        stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+
+          r: Math.random() * 1.8 + 0.2,
+
+          alpha: Math.random(),
+
+          speed: Math.random() * 0.015 + 0.003,
+
+          pink: Math.random() > 0.5,
+        });
+      }
+
+      // ==========================
+      // SHOOTING STARS
+      // ==========================
+
+      const meteors = [];
+
+      function createMeteor() {
+        meteors.push({
+          x: Math.random() * w,
+
+          y: -200,
+
+          len: Math.random() * 150 + 80,
+
+          speed: Math.random() * 10 + 6,
+        });
+      }
+
+      setInterval(createMeteor, 2500);
+
+      // ==========================
+      // DRAW
+      // ==========================
+
+      function drawGalaxy() {
+        const grad = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w);
+
+        grad.addColorStop(0, "#2b0038");
+        grad.addColorStop(0.45, "#150022");
+        grad.addColorStop(1, "#000");
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // stars
+
+        for (const s of stars) {
+          s.alpha += s.speed;
+
+          if (s.alpha >= 1 || s.alpha <= 0) {
+            s.speed *= -1;
+          }
+
+          ctx.beginPath();
+
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+
+          ctx.fillStyle = s.pink
+            ? `rgba(255,180,230,${s.alpha})`
+            : `rgba(255,255,255,${s.alpha})`;
+
+          ctx.fill();
+        }
+
+        // meteors
+
+        meteors.forEach((m, index) => {
+          const g = ctx.createLinearGradient(
+            m.x,
+            m.y,
+            m.x - m.len,
+            m.y - m.len,
+          );
+
+          g.addColorStop(0, "rgba(255,255,255,1)");
+          g.addColorStop(0.3, "rgba(255,200,235,.8)");
+          g.addColorStop(1, "rgba(255,255,255,0)");
+
+          ctx.strokeStyle = g;
+          ctx.lineWidth = 2;
+
+          ctx.beginPath();
+
+          ctx.moveTo(m.x, m.y);
+
+          ctx.lineTo(m.x - m.len, m.y - m.len);
+
+          ctx.stroke();
+
+          m.x += m.speed;
+          m.y += m.speed;
+
+          if (m.y > h + 200) {
+            meteors.splice(index, 1);
+          }
+        });
+
+        requestAnimationFrame(drawGalaxy);
+      }
+
+      drawGalaxy();
+
+      // =====================================
+      // HEART HOLD
+      // =====================================
+
+      let holding = false;
+      let holdTime = 0;
+
+      const heart = document.getElementById("heart");
+      const progress = document.getElementById("progress");
+
+      function beginHold() {
+        if (holding) return;
+
+        const music = document.getElementById("bgMusic");
+
+        music.play().catch(() => {});
+
+        holding = true;
+        holdTime = 0;
+
+        const timer = setInterval(() => {
+          if (!holding) {
+            progress.style.width = "0px";
+
+            clearInterval(timer);
+            return;
+          }
+
+          holdTime += 20;
+
+          progress.style.width = (holdTime / 1200) * 240 + "px";
+
+          if (holdTime >= 1200) {
+            clearInterval(timer);
+
+            openGift();
+          }
+        }, 20);
+      }
+
+      function stopHold() {
+        holding = false;
+      }
+
+      heart.addEventListener("mousedown", beginHold);
+      heart.addEventListener("touchstart", beginHold);
+
+      heart.addEventListener("mouseup", stopHold);
+      heart.addEventListener("mouseleave", stopHold);
+      heart.addEventListener("touchend", stopHold);
+
+      // =====================================
+      // OPEN PAGE 2
+      // =====================================
+
+      function openGift() {
+        const p1 = document.getElementById("page1");
+        const p2 = document.getElementById("page2");
+
+        p1.style.opacity = "0";
+
+        setTimeout(() => {
+          p1.style.display = "none";
+
+          p2.style.opacity = "1";
+          p2.style.pointerEvents = "auto";
+
+          startParticleShow();
+        }, 1000);
+      }
+      // =====================================
+      // PARTICLE TEXT SYSTEM
+      // =====================================
+
+      const particleCanvas = document.getElementById("particles");
+
+      const pctx = particleCanvas.getContext("2d");
+
+      particleCanvas.width = innerWidth;
+      particleCanvas.height = innerHeight;
+
+      window.addEventListener("resize", () => {
+        particleCanvas.width = innerWidth;
+        particleCanvas.height = innerHeight;
+      });
+
+      // =======================
+      // PARTICLE CLASS
+      // =======================
+
+      const particles = [];
+
+      let phase = 0;
+      let canClick = false;
+
+      class Particle {
+        constructor(x, y) {
+          this.x = Math.random() * innerWidth;
+
+          this.y = Math.random() * innerHeight;
+
+          this.tx = x;
+          this.ty = y;
+
+          this.vx = 0;
+          this.vy = 0;
+
+          // hạt nhỏ hơn
+          this.size = 1.1;
+
+          this.color = Math.random() > 0.5 ? "#ffffff" : "#ffb7ea";
+        }
+
+        update() {
+          const dx = this.tx - this.x;
+
+          const dy = this.ty - this.y;
+
+          this.vx += dx * 0.01;
+          this.vy += dy * 0.01;
+
+          this.vx *= 0.9;
+          this.vy *= 0.9;
+          this.x += this.vx;
+          this.y += this.vy;
+        }
+
+        draw() {
+          pctx.beginPath();
+
+          pctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+
+          pctx.fillStyle = this.color;
+          pctx.fill();
+        }
+      }
+
+      // =======================
+      // CREATE TEXT POINTS
+      // =======================
+
+      function createTextPoints(lines, fontSize) {
+        const off = document.createElement("canvas");
+
+        const octx = off.getContext("2d");
+
+        off.width = innerWidth;
+        off.height = innerHeight;
+
+        octx.clearRect(0, 0, off.width, off.height);
+
+        octx.fillStyle = "#fff";
+
+        octx.textAlign = "center";
+        octx.textBaseline = "middle";
+
+        octx.font = `bold ${fontSize}px Segoe UI`;
+
+        const totalHeight = lines.length * fontSize * 1.3;
+
+        const startY = innerHeight / 2 - totalHeight / 2;
+
+        lines.forEach((line, index) => {
+          octx.fillText(
+            line,
+
+            innerWidth / 2,
+
+            startY + index * fontSize * 1.3,
+          );
+        });
+
+        const img = octx.getImageData(0, 0, off.width, off.height);
+
+        const pts = [];
+
+        // mật độ cực cao
+        for (let y = 0; y < img.height; y += 3) {
+          for (let x = 0; x < img.width; x += 3) {
+            const alpha = img.data[(y * img.width + x) * 4 + 3];
+
+            if (alpha > 120) {
+              pts.push({
+                x,
+                y,
+              });
+            }
+          }
+        }
+
+        return pts;
+      }
+
+      // =======================
+      // MORPH TO TEXT
+      // =======================
+
+      function morphTo(points) {
+        while (particles.length < points.length) {
+          particles.push(
+            new Particle(
+              Math.random() * innerWidth,
+              Math.random() * innerHeight,
+            ),
+          );
+        }
+
+        points.forEach((p, i) => {
+          particles[i].tx = p.x;
+          particles[i].ty = p.y;
+        });
+
+        for (let i = points.length; i < particles.length; i++) {
+          particles[i].tx = Math.random() * innerWidth;
+
+          particles[i].ty = Math.random() * innerHeight;
+        }
+      }
+
+      // =======================
+      // ANIMATION LOOP
+      // =======================
+
+      function animateParticles() {
+        pctx.clearRect(0, 0, innerWidth, innerHeight);
+
+        particles.forEach((p) => {
+          p.update();
+          p.draw();
+        });
+
+        requestAnimationFrame(animateParticles);
+      }
+
+      animateParticles();
+
+      function startParticleShow() {
+        phase = 0;
+        canClick = false;
+
+        const firstText = createTextPoints(
+          ["CHÚC MỪNG NGÀY", "QUỐC TẾ THIẾU NHI !"],
+          Math.min(70, innerWidth / 12),
+        );
+
+        morphTo(firstText);
+
+        setTimeout(() => {
+          phase = 1;
+          canClick = true;
+
+          const hint = document.getElementById("nextHint");
+
+          if (hint) {
+            hint.style.opacity = "1";
+          }
+        }, 2000);
+      }
+
+      function scatterSoft() {
+        particles.forEach((p) => {
+          p.tx = p.x + (Math.random() - 0.5) * 120;
+
+          p.ty = p.y + (Math.random() - 0.5) * 120;
+        });
+      }
+      // =====================================
+      // EXPLODE EFFECT
+      // =====================================
+
+      // =====================================
+      // FINAL MESSAGE
+      // =====================================
+
+      function showFinalMessage() {
+        const mobile = innerWidth < 700;
+
+        const finalText = createTextPoints(
+          mobile
+            ? [
+                "Chúc các cậu",
+                "một ngày",
+                "thật vui vẻ nhé!",
+                "",
+                "Đừng quên!",
+                "Bạn luôn là",
+                "những vì sao nhỏ",
+                "đáng yêu",
+                "và rạng rỡ nhất",
+                "",
+                "những vì sao",
+                "sáng nhất",
+                "và tuyệt đẹp nhất",
+                "thế gian này!",
+              ]
+            : [
+                "Chúc các cậu một ngày",
+                "thật vui vẻ nhé!",
+                "",
+                "Đừng quên! Bạn luôn là",
+                "những vì sao nhỏ đáng yêu",
+                "và rạng rỡ nhất,",
+                "những vì sao sáng nhất",
+                "và tuyệt đẹp nhất thế gian này!",
+              ],
+
+          mobile ? 32 : 42,
+        );
+
+        morphTo(finalText);
+      }
+
+      const photos = [
+        "images/1.jpg",
+        "images/2.jpg",
+        "images/3.jpg",
+        "images/4.jpg",
+        "images/5.jpg",
+
+        "images/6.jpg",
+        "images/7.jpg",
+        "images/8.jpg",
+        "images/9.jpg",
+        "images/10.jpg",
+
+        "images/11.jpg",
+        "images/12.jpg",
+        "images/13.jpg",
+        "images/14.jpg",
+        "images/15.jpg",
+      ];
+
+      const wishes = [
+        "Bạn là vì sao đáng yêu nhất hôm nay ✨",
+
+        "Cười lên nhé, bạn xinh lắm đó 🌷",
+
+        "Một ngày thật nhiều niềm vui nha 💖",
+
+        "Mong mọi điều tốt đẹp sẽ đến với bạn 🌈",
+
+        "Luôn hạnh phúc như bây giờ nhé 🌸",
+
+        "Bạn tuyệt vời hơn bạn nghĩ nhiều đó ⭐",
+
+        "Mãi giữ nụ cười thật tươi nha 😊",
+
+        "Hôm nay nhất định phải vui thật nhiều 🎉",
+
+        "Chúc bạn luôn được yêu thương 💝",
+
+        "Bạn biết không, bạn dễ thương lắm đó 🌼",
+
+        "Được gặp bạn là phép màu tuyệt đẹp 🦋",
+
+        "Chúc bạn luôn bình an và hạnh phúc 🍀",
+
+        "Tớ thích cậu...",
+
+        "Đừng quên bạn rất đặc biệt đó nha 💕",
+
+        "Luôn tỏa sáng theo cách riêng của mình ✨",
+
+        "Chúc bạn gặp thật nhiều may mắn 🌻",
+
+        "Bạn là ánh nắng nhỏ rất đáng yêu ☀️",
+
+        "Ngày nào cũng thật rực rỡ nhé 🌺",
+
+        "Mong mọi ước mơ của bạn đều thành hiện thực 🎈",
+
+        "Cả thế giới hôm nay đang mỉm cười với bạn đó 💗",
+      ];
+
+      let galleryReady = false;
+
+      function openGallery() {
+        console.log("Open Gallery");
+        const p2 = document.getElementById("page2");
+
+        const p3 = document.getElementById("page3");
+
+        p2.style.opacity = "0";
+
+        setTimeout(() => {
+          p2.style.pointerEvents = "none";
+
+          p3.style.opacity = "1";
+          p3.style.pointerEvents = "auto";
+          particleCanvas.style.opacity = "0";
+
+          createSphere();
+        }, 800);
+      }
+
+      function createSphere() {
+        console.log("Create Sphere");
+
+        const sphere = document.getElementById("photoSphere");
+
+        sphere.innerHTML = "";
+
+        sphereItems = [];
+
+        const radius = 260;
+
+        photos.forEach((src, index) => {
+          const img = document.createElement("img");
+
+          img.src = src;
+
+          img.className = "photoItem";
+
+          img.onclick = (e) => {
+            e.stopPropagation();
+
+            showPhoto(src);
+          };
+
+          sphere.appendChild(img);
+
+          // phân bố đều trên mặt cầu
+          const phi = Math.acos(1 - (2 * (index + 0.5)) / photos.length);
+
+          const theta = Math.PI * (1 + Math.sqrt(5)) * (index + 0.5);
+
+          sphereItems.push({
+            element: img,
+
+            x: radius * Math.cos(theta) * Math.sin(phi),
+
+            y: radius * Math.sin(theta) * Math.sin(phi),
+
+            z: radius * Math.cos(phi),
+          });
+        });
+
+        galleryReady = true;
+
+        animateSphere();
+      }
+
+      function animateSphere() {
+        if (!galleryReady) {
+          requestAnimationFrame(animateSphere);
+          return;
+        }
+
+        sphereRotation += 0.003;
+
+        sphereItems.forEach((item) => {
+          const cos = Math.cos(sphereRotation);
+
+          const sin = Math.sin(sphereRotation);
+
+          const x = item.x * cos - item.z * sin;
+
+          const z = item.x * sin + item.z * cos;
+
+          const scale = (z + 400) / 800;
+
+          item.element.style.left = innerWidth / 2 + x - 75 + "px";
+
+          item.element.style.top = innerHeight / 2 + item.y - 50 + "px";
+
+          item.element.style.transform = `scale(${scale})`;
+
+          item.element.style.opacity = Math.max(0.25, scale);
+
+          item.element.style.zIndex = Math.floor(scale * 100);
+        });
+
+        requestAnimationFrame(animateSphere);
+      }
+
+      document.addEventListener("click", () => {
+        if (!canClick) return;
+
+        // câu đầu -> lời chúc dài
+        if (phase === 1) {
+          phase = 2;
+
+          const hint = document.getElementById("nextHint");
+
+          hint.innerText = "Chạm để xem những khoảnh khắc đáng nhớ 📸";
+
+          showFinalMessage();
+
+          return;
+        }
+
+        // lời chúc dài -> gallery ảnh
+        if (phase === 2) {
+          phase = 3;
+
+          openGallery();
+
+          return;
+        }
+      });
+
+      function showPhoto(src) {
+        const popup = document.getElementById("photoPopup");
+
+        document.getElementById("popupImg").src = src;
+
+        document.getElementById("popupWish").innerText =
+          wishes[Math.floor(Math.random() * wishes.length)];
+
+        popup.style.opacity = "1";
+        popup.style.pointerEvents = "auto";
+      }
+
+      document.getElementById("photoPopup").onclick = () => {
+        const popup = document.getElementById("photoPopup");
+
+        popup.style.opacity = "0";
+
+        popup.style.pointerEvents = "none";
+      };
+    </script>
+  </body>
+</html>
